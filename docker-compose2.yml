@@ -1,0 +1,126 @@
+version: '3'
+
+services:
+  nginx:
+    build: nginx
+    links:
+        - socket1:socket1
+        - socket2:socket2
+    ports:
+        - "9001:9001"
+        - "9002:9002"
+    container_name: nginx
+
+  gameserver:
+    build:
+      context: game-service
+      dockerfile: Dockerfile
+#    volumes:
+#      - game-service
+    container_name: server
+    environment:
+      - APP_NAME=china
+      - API_HISTORY_URL=https://api.cxz777.com/api/history
+      - SERVER_HOST=10.1.10.57
+      - SERVER_PORT=8000
+      - REDIS_HOST=10.1.10.57
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=bfd3v3l0p3r1@
+      - DB_HOST=10.1.10.57
+      - DB_USER=root
+      - DB_PORT=3306
+      - DB_PASS=password
+      - BC_DB_NAME=baccarat
+      - DT_DB_NAME=dragontiger
+      - POKER_DB_NAME=poker
+      - SICBO_DB_NAME=sicbo
+      - NIHTAN_DB_NAME=nihtan_api
+    ports:
+      - "8000:8000"
+#      - backend
+    depends_on:
+#       - db
+      - redis
+
+  socket1:
+    build:
+      context: socket-service
+      dockerfile: Dockerfile
+    container_name: socket1
+    environment:
+      - APP_NAME=socket1
+      - APP_HOST=10.1.10.57
+      - HTTP_PORT=9000
+      - GAME_SERVER=game-servers
+      - REDIS_HOST=10.1.10.57
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=bfd3v3l0p3r1@
+      - GAME_SERVER_REDIS_PORT=6379
+      - GAME_SERVER_REDIS_HOST=10.1.10.57
+      - GAME_SERVER_REDIS_PASSWORD=bfd3v3l0p3r1@
+      - SHOULD_EMIT=1
+      - SHOULD_UPDATE_AND_EMIT=1
+
+    ports:
+      - "9000:9000"
+    links:
+      - redis
+#    networks:
+#      - backend
+    depends_on:
+      - redis
+
+  socket2:
+    build:
+      context: socket-service
+      dockerfile: Dockerfile
+#    working_dir: /usr/src/app
+#    volumes_from:
+#      - socket1
+    container_name: socket2
+    environment:
+      - APP_NAME=socket2
+      - APP_HOST=10.1.10.57
+      - HTTP_PORT=9004
+      - GAME_SERVER=game-servers
+      - REDIS_HOST=10.1.10.57
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=bfd3v3l0p3r1@
+      - GAME_SERVER_REDIS_PORT=6379
+      - GAME_SERVER_REDIS_HOST=10.1.10.57
+      - GAME_SERVER_REDIS_PASSWORD=bfd3v3l0p3r1@
+      - SHOULD_EMIT=0
+      - SHOULD_UPDATE_AND_EMIT=0
+
+    ports:
+      - "9004:9004"
+    links:
+      - redis
+#    networks:
+#      - backend
+    depends_on:
+      - redis
+
+#  db:
+#    image: mysql:5.7
+#    ports:
+#      - "3307:3306"
+#    command: mysqld --sql_mode=""
+#    environment:
+#      MYSQL_ROOT_PASSWORD: "password"
+#    networks:
+#      - backend
+
+  redis:
+    image: redis:4-alpine
+    command: redis-server --requirepass bfd3v3l0p3r1@
+#    volumes:
+#      - /etc/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    container_name: redis
+    network_mode: host
+    ports:
+      - "6378:6379"
+#    networks:
+#      - backend
+#networks:
+#  backend:
